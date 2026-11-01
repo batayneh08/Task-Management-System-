@@ -1,0 +1,12 @@
+# .NET build output and IDE files
+**/bin/
+**/obj/
+**/.vs/
+*.csproj.user
+
+# Angular dependencies and generated cache
+**/node_modules/
+**/.angular/
+
+# Local development configuration
+**/appsettings.Development.json
