@@ -1,0 +1,109 @@
+<div class="workspace">
+  <aside class="sidebar">
+    <a class="brand sidebar-brand" routerLink="/dashboard">
+      <span class="brand-mark" aria-hidden="true">✦</span>
+      <span>Task Management<span class="brand-dot">.</span></span>
+    </a>
+
+    <span class="nav-caption">MAIN MENU</span>
+    <a class="nav-link active" routerLink="/dashboard" aria-current="page"><span class="nav-icon">▦</span> Dashboard</a>
+    <a class="nav-link" routerLink="/tasks"><span class="nav-icon">☷</span> Tasks</a>
+    <div class="sidebar-bottom">
+      <div class="connection-card">
+        <span class="connection-dot"></span>
+        <span><strong>Connection Active</strong><small>Server Connected</small></span>
+      </div>
+      <button class="logout-button" type="button" (click)="logout()"><span class="nav-icon">↪</span> Log Out</button>
+    </div>
+  </aside>
+
+  <main class="dashboard-main">
+    <header class="topbar">
+      <div>
+        <span class="breadcrumb">Workspace <span>/</span> Dashboard</span>
+        <h1>Dashboard</h1>
+      </div>
+      <div class="user-chip">
+        <span class="avatar">{{ currentUser()?.fullName?.charAt(0) ?? 'U' }}</span>
+        <span class="user-chip-name">{{ currentUser()?.fullName }}</span>
+      </div>
+    </header>
+
+    <section class="welcome-row">
+      <div>
+        <p class="welcome-kicker">OVERVIEW</p>
+        <h2>Welcome, {{ currentUser()?.fullName }} <span aria-hidden="true">✦</span></h2>
+        <p>Track your tasks and progress in one place.</p>
+      </div>
+      <button class="refresh-button" type="button" (click)="loadDashboard()" [disabled]="loading()">
+        <span aria-hidden="true">↻</span> Refresh Data
+      </button>
+    </section>
+
+    @if (errorMessage()) {
+      <div class="dashboard-alert" role="alert">
+        <span>{{ errorMessage() }}</span>
+        <button type="button" (click)="loadDashboard()">Try Again</button>
+      </div>
+    }
+
+    @if (loading() && !dashboard()) {
+      <div class="loading-card" role="status">Loading dashboard…</div>
+    } @else if (dashboard(); as data) {
+      <section class="stats-grid" aria-label="Task Statistics">
+        <article class="stat-card stat-total">
+          <span class="stat-icon">▦</span><span class="stat-label">Total Tasks</span>
+          <strong>{{ data.counts.totalTasks }}</strong><small>All workspace tasks</small>
+        </article>
+        <article class="stat-card stat-todo">
+          <span class="stat-icon">◷</span><span class="stat-label">To Do</span>
+          <strong>{{ data.counts.toDoTasks }}</strong><small>Waiting to get started</small>
+        </article>
+        <article class="stat-card stat-progress">
+          <span class="stat-icon">↗</span><span class="stat-label">In Progress</span>
+          <strong>{{ data.counts.inProgressTasks }}</strong><small>Currently being worked on</small>
+        </article>
+        <article class="stat-card stat-complete">
+          <span class="stat-icon">✓</span><span class="stat-label">Completed</span>
+          <strong>{{ data.counts.completedTasks }}</strong><small>Finished tasks</small>
+        </article>
+      </section>
+
+      <section class="dashboard-columns">
+        <article class="content-card recent-card">
+          <div class="card-heading"><div><span class="section-kicker">LATEST UPDATES</span><h3>Recent Tasks</h3></div><span class="count-pill">{{ data.recentTasks.length }}</span></div>
+          @if (data.recentTasks.length === 0) {
+            <div class="empty-state"><span>✧</span><strong>No tasks to show yet</strong><p>New tasks will appear here.</p></div>
+          } @else {
+            <div class="task-list">
+              @for (task of data.recentTasks; track task.id) {
+                <div class="task-row">
+                  <span class="task-marker" [class]="'task-marker status-' + task.status"></span>
+                  <div class="task-info"><strong>{{ task.title }}</strong><small>{{ task.assignedTo.fullName }}</small></div>
+                  <span class="status-pill" [class]="'status-pill status-' + task.status">{{ statusLabel(task.status) }}</span>
+                  <time>{{ dueDate(task) }}</time>
+                </div>
+              }
+            </div>
+          }
+        </article>
+
+        <article class="content-card focus-card">
+          <div class="card-heading"><div><span class="section-kicker">NEEDS YOUR ATTENTION</span><h3>High Priority</h3></div><span class="priority-icon">↟</span></div>
+          @if (data.highPriorityTasks.length === 0) {
+            <div class="empty-state compact-empty"><span>✓</span><strong>All caught up</strong><p>No high-priority tasks right now.</p></div>
+          } @else {
+            <div class="priority-list">
+              @for (task of data.highPriorityTasks; track task.id) {
+                <div class="priority-row"><span class="priority-line"></span><div><strong>{{ task.title }}</strong><small>{{ task.assignedTo.fullName }} · {{ dueDate(task) }}</small></div></div>
+              }
+            </div>
+          }
+          <div class="focus-footer"><span class="focus-badge">{{ data.myAssignedTasks.length }}</span><span>Tasks assigned to you</span></div>
+        </article>
+      </section>
+    }
+
+    <footer class="dashboard-footer">Task Management <span>·</span> A clearer workspace for better work</footer>
+  </main>
+</div>

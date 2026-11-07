@@ -1,0 +1,75 @@
+<main class="auth-layout">
+  <section class="auth-story" aria-label="About Task Management">
+    <a class="brand" routerLink="/login" aria-label="Task Management home">
+      <span class="brand-mark" aria-hidden="true">✦</span>
+      <span>Task Management<span class="brand-dot">.</span></span>
+    </a>
+    <div class="story-content">
+      <span class="story-kicker">Start with one simple step</span>
+      <h1>A fresh start<br />for great work.</h1>
+      <p>Create your account to organize tasks and keep priorities on track.</p>
+      <div class="story-note"><span class="note-icon">✓</span><span>Sign up, organize, get things done</span></div>
+    </div>
+    <span class="story-orbit orbit-one"></span>
+    <span class="story-orbit orbit-two"></span>
+    <span class="story-footer">Task Management System</span>
+  </section>
+
+  <section class="auth-panel">
+    <div class="auth-form-wrap register-form-wrap">
+      <div class="mobile-brand"><span class="brand-mark" aria-hidden="true">✦</span><span>Task Management<span class="brand-dot">.</span></span></div>
+      <span class="form-eyebrow">GET STARTED</span>
+      <h2>Create Your Account</h2>
+      <p class="form-intro">Enter the following details to get started.</p>
+
+      @if (errorMessage()) {
+        <div class="notice error-notice" role="alert">{{ errorMessage() }}</div>
+      }
+
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <label for="fullName">Full Name</label>
+        <div class="input-wrap">
+          <span class="input-icon" aria-hidden="true">◉</span>
+          <input id="fullName" type="text" formControlName="fullName" autocomplete="name" placeholder="Example: Sarah Ahmed" />
+        </div>
+        @if (form.controls.fullName.touched && form.controls.fullName.invalid) {
+          <small class="field-error">Name is required and must contain at least 2 characters.</small>
+        }
+
+        <label for="email" class="password-label">Email Address</label>
+        <div class="input-wrap">
+          <span class="input-icon" aria-hidden="true">✉</span>
+          <input id="email" type="email" formControlName="email" autocomplete="email" placeholder="name@example.com" />
+        </div>
+        @if (form.controls.email.touched && form.controls.email.invalid) {
+          <small class="field-error">Enter a valid email address.</small>
+        }
+
+        <label for="password" class="password-label">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon lock-icon" aria-hidden="true">⌑</span>
+          <input id="password" type="password" formControlName="password" autocomplete="new-password" placeholder="At least 8 characters" />
+        </div>
+        @if (form.controls.password.touched && form.controls.password.invalid) {
+          <small class="field-error">Password must be at least 8 characters long.</small>
+        }
+
+        <label for="confirmPassword" class="password-label">Confirm Password</label>
+        <div class="input-wrap">
+          <span class="input-icon lock-icon" aria-hidden="true">⌑</span>
+          <input id="confirmPassword" type="password" formControlName="confirmPassword" autocomplete="new-password" placeholder="Re-enter your password" />
+        </div>
+        @if (form.controls.confirmPassword.touched && form.hasError('passwordMismatch')) {
+          <small class="field-error">Passwords do not match.</small>
+        }
+
+        <button class="primary-button" type="submit" [disabled]="loading()">
+          @if (loading()) { Creating Account… } @else { Create Account <span aria-hidden="true">→</span> }
+        </button>
+      </form>
+
+      <p class="auth-switch">Already have an account? <a routerLink="/login">Log In</a></p>
+      <p class="secure-note"><span aria-hidden="true">▣</span> Your information is stored securely.</p>
+    </div>
+  </section>
+</main>

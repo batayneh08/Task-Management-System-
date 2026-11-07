@@ -7,6 +7,9 @@
 # Angular dependencies and generated cache
 **/node_modules/
 **/.angular/
+**/dist/
+**/playwright-report/
+**/test-results/
 
 # Local development configuration
 **/appsettings.Development.json

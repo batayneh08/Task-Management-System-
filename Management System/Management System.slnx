@@ -1,3 +1,7 @@
 <Solution>
   <Project Path="Management System.csproj" />
+  <Project Path="..\ManagementSystem.Application\ManagementSystem.Application.csproj" />
+  <Project Path="..\ManagementSystem.Domain\ManagementSystem.Domain.csproj" />
+  <Project Path="..\ManagementSystem.Infrastructure\ManagementSystem.Infrastructure.csproj" />
+  <Project Path="..\ManagementSystem.Tests\ManagementSystem.Tests.csproj" />
 </Solution>

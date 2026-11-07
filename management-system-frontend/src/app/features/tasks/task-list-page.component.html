@@ -1,0 +1,122 @@
+<div class="workspace tasks-workspace">
+  <aside class="sidebar">
+    <a class="brand sidebar-brand" routerLink="/dashboard"><span class="brand-mark" aria-hidden="true">✦</span><span>Task Management<span class="brand-dot">.</span></span></a>
+    <span class="nav-caption">MAIN MENU</span>
+    <a class="nav-link" routerLink="/dashboard"><span class="nav-icon">▦</span> Dashboard</a>
+    <a class="nav-link active" routerLink="/tasks" aria-current="page"><span class="nav-icon">☷</span> Tasks</a>
+    <div class="sidebar-bottom">
+      <div class="connection-card"><span class="connection-dot"></span><span><strong>Connection Active</strong><small>Server Connected</small></span></div>
+      <button class="logout-button" type="button" (click)="logout()"><span class="nav-icon">↪</span> Log Out</button>
+    </div>
+  </aside>
+
+  <main class="tasks-main">
+    <header class="tasks-topbar">
+      <div><span class="breadcrumb">Workspace <span>/</span> Tasks</span><h1>Task Management</h1></div>
+      <div class="tasks-user"><span class="avatar">{{ currentUser()?.fullName?.charAt(0) ?? 'U' }}</span><span>{{ currentUser()?.fullName }}</span></div>
+    </header>
+
+    <section class="tasks-heading">
+      <div><span class="section-kicker">WORK OVERVIEW</span><h2>All Tasks</h2><p>Track, search, and update your tasks.</p></div>
+      @if (isAdmin()) { <button class="create-button" type="button" (click)="openCreateForm()"><span>＋</span> New Task</button> }
+    </section>
+
+    @if (pageError()) { <div class="task-alert" role="alert">{{ pageError() }}<button type="button" (click)="loadTasks()">Try Again</button></div> }
+
+    <form class="filter-bar" [formGroup]="filters" (ngSubmit)="applyFilters()">
+      <label class="search-box"><span aria-hidden="true">⌕</span><input type="search" formControlName="search" placeholder="Search by task title or description" /></label>
+      <select formControlName="status" aria-label="Filter by status">
+        <option value="">All Statuses</option>
+        @for (option of statusOptions; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }
+      </select>
+      <select formControlName="priority" aria-label="Filter by priority">
+        <option value="">All Priorities</option>
+        @for (option of priorityOptions; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }
+      </select>
+      <select formControlName="assignedToId" aria-label="Filter by assignee">
+        <option value="">All Assignees</option>
+        @for (user of users(); track user.id) { <option [value]="user.id">{{ user.fullName }}</option> }
+      </select>
+      <button class="filter-apply" type="submit">Apply</button>
+      <button class="filter-clear" type="button" (click)="clearFilters()">Clear</button>
+    </form>
+
+    @if (userError()) { <p class="directory-note" role="status">{{ userError() }}</p> }
+    @if (loading() && tasks().length === 0) {
+      <div class="tasks-loading">Loading tasks…</div>
+    } @else if (tasks().length === 0) {
+      <section class="tasks-empty"><span>☷</span><h3>No matching tasks</h3><p>Try changing the selected filters.</p>@if (isAdmin()) { <button type="button" (click)="openCreateForm()">Create Your First Task</button> }</section>
+    } @else {
+      <section class="tasks-table-card">
+        <div class="table-summary"><span>Tasks <strong>{{ tasks().length }}</strong></span><span>Results are based on the selected filters</span></div>
+        <div class="table-scroll">
+          <table>
+            <thead><tr><th>Task</th><th>Status</th><th>Priority</th><th>Assignee</th><th>Due Date</th><th><span class="visually-hidden">Actions</span></th></tr></thead>
+            <tbody>
+              @for (task of tasks(); track task.id) {
+                <tr>
+                  <td><div class="table-task-title"><strong>{{ task.title }}</strong><small>{{ task.description || 'No description' }}</small></div></td>
+                  <td><span class="status-chip" [class]="'status-chip state-' + task.status"><i></i>{{ statusLabel(task.status) }}</span></td>
+                  <td><span class="priority-chip" [class]="'priority-chip priority-' + task.priority">{{ priorityLabel(task.priority) }}</span></td>
+                  <td><span class="assignee-cell"><span class="mini-avatar">{{ task.assignedTo.fullName.charAt(0) }}</span>{{ task.assignedTo.fullName }}</span></td>
+                  <td><time>{{ formatDate(task.dueDate) }}</time></td>
+                  <td><div class="row-actions"><button type="button" title="Activity Log" aria-label="View task activity" (click)="openActivity(task)">◷</button>@if (canEditTask(task)) { <button type="button" title="Edit" aria-label="Edit task" (click)="openEditForm(task)">✎</button> }@if (isAdmin()) { <button type="button" title="Delete" aria-label="Delete task" (click)="askDelete(task)">×</button> }</div></td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+    <footer class="tasks-footer">Task Management <span>·</span> {{ tasks().length }} tasks shown</footer>
+  </main>
+</div>
+
+@if (isFormOpen()) {
+  <div class="modal-backdrop" (click)="closeForm()">
+    <section class="task-modal" role="dialog" aria-modal="true" aria-labelledby="task-modal-title" (click)="$event.stopPropagation()">
+      <header class="modal-heading"><div><span class="section-kicker">TASK DETAILS</span><h2 id="task-modal-title">{{ editingTask() ? 'Edit Task' : 'Create a New Task' }}</h2></div><button type="button" class="icon-close" aria-label="Close" (click)="closeForm()">×</button></header>
+      @if (formError()) { <div class="task-alert" role="alert">{{ formError() }}</div> }
+      <form [formGroup]="taskForm" (ngSubmit)="saveTask()" novalidate>
+        <label for="taskTitle">Task Title</label>@if (isAdmin()) { <input class="modal-input" id="taskTitle" type="text" formControlName="title" maxlength="200" placeholder="Enter a clear title" />@if (taskForm.controls.title.touched && taskForm.controls.title.invalid) { <small class="field-error">A title is required (200 characters maximum).</small> } } @else { <p class="assignee-readonly">{{ editingTask()?.title }}</p> }
+        <label for="taskDescription" class="modal-label-gap">Description <span>Optional</span></label>@if (isAdmin()) { <textarea class="modal-input description-input" id="taskDescription" formControlName="description" maxlength="4000" placeholder="Add details to help complete the task"></textarea> } @else { <p class="assignee-readonly description-readonly">{{ editingTask()?.description || 'No description' }}</p> }
+        <div class="form-two-cols">
+          <div><label for="taskStatus">Status</label><select class="modal-input" id="taskStatus" formControlName="status">@for (option of statusOptions; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }</select></div>
+          <div><label for="taskPriority">Priority</label>@if (isAdmin()) { <select class="modal-input" id="taskPriority" formControlName="priority">@for (option of priorityOptions; track option.value) { <option [ngValue]="option.value">{{ option.label }}</option> }</select> } @else { <p class="assignee-readonly">{{ priorityLabel(editingTask()?.priority ?? 0) }}</p> }</div>
+        </div>
+        <div class="form-two-cols modal-label-gap">
+          <div><label for="taskAssignee">Assignee</label>@if (isAdmin()) { <select class="modal-input" id="taskAssignee" formControlName="assignedToId"><option value="">Select an assignee</option>@for (user of users(); track user.id) { <option [value]="user.id">{{ user.fullName }}</option> }</select>@if (taskForm.controls.assignedToId.touched && taskForm.controls.assignedToId.invalid) { <small class="field-error">Select the person responsible for this task.</small> } } @else { <p class="assignee-readonly">{{ editingTask()?.assignedTo?.fullName }}</p> }</div>
+          <div><label for="taskDueDate">Due Date</label>@if (isAdmin()) { <input class="modal-input" id="taskDueDate" type="date" formControlName="dueDate" />@if (taskForm.controls.dueDate.touched && taskForm.controls.dueDate.invalid) { <small class="field-error">Select a due date.</small> } } @else { <p class="assignee-readonly">{{ formatDate(editingTask()?.dueDate ?? '') }}</p> }</div>
+        </div>
+        @if (!isAdmin()) {
+          <label for="progressSummary" class="modal-label-gap">Update Summary <span>Optional</span></label>
+          <textarea class="modal-input progress-summary-input" id="progressSummary" formControlName="progressSummary" maxlength="3000" placeholder="Describe the work you completed or changed in this update…"></textarea>
+          @if (taskForm.controls.progressSummary.touched && taskForm.controls.progressSummary.invalid) { <small class="field-error">The update summary must be 3000 characters or fewer.</small> }
+        }
+        <footer class="modal-actions"><button class="secondary-button" type="button" (click)="closeForm()">Cancel</button><button class="create-button" type="submit" [disabled]="saving()">{{ saving() ? 'Saving…' : editingTask() ? 'Save Changes' : 'Create Task' }}</button></footer>
+      </form>
+    </section>
+  </div>
+}
+
+@if (activityTask(); as selectedTask) {
+  <div class="modal-backdrop" (click)="activityTask.set(null)">
+    <section class="activity-modal" role="dialog" aria-modal="true" aria-labelledby="activity-title" (click)="$event.stopPropagation()">
+      <header class="modal-heading"><div><span class="section-kicker">ACTIVITY HISTORY</span><h2 id="activity-title">{{ selectedTask.title }}</h2></div><button type="button" class="icon-close" aria-label="Close" (click)="activityTask.set(null)">×</button></header>
+      @if (activityLoading()) { <div class="tasks-loading">Loading activity history…</div> }
+      @else if (activityError()) { <div class="task-alert" role="alert">{{ activityError() }}</div> }
+      @else if (activity().length === 0) { <div class="tasks-loading">No activity has been recorded for this task.</div> }
+      @else { <div class="activity-list">@for (item of activity(); track item.id) { <article class="activity-item"><span class="activity-dot"></span><div><strong>{{ item.userFullName }} <span>{{ item.action }}</span></strong>@if (item.action === 'Updated Status' && activityStatusUpdate(item); as update) { <p><strong>Status:</strong> {{ activityValueLabel('Status', item.oldValue) }} <span>→</span> {{ activityValueLabel('Status', update.value) }}</p>@if (update.summary) { <p class="activity-summary"><strong>Update Summary:</strong> {{ update.summary }}</p> } } @else if (item.oldValue || item.newValue) { <p>{{ item.oldValue || '—' }} <span>→</span> {{ item.action === 'Updated Status' ? activityValueLabel('Status', item.newValue) : item.newValue || '—' }}</p> }<time>{{ formatDate(item.createdAt) }}</time></div></article> }</div> }
+      <footer class="modal-actions"><button class="secondary-button" type="button" (click)="activityTask.set(null)">Close</button></footer>
+    </section>
+  </div>
+}
+
+@if (taskToDelete(); as selectedTask) {
+  <div class="modal-backdrop" (click)="cancelDelete()">
+    <section class="confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="delete-title" (click)="$event.stopPropagation()">
+      <span class="delete-symbol">!</span><h2 id="delete-title">Delete Task?</h2><p>“{{ selectedTask.title }}” will be permanently removed from the task list.</p>
+      <footer class="confirm-actions"><button class="secondary-button" type="button" (click)="cancelDelete()">Cancel</button><button class="delete-confirm-button" type="button" (click)="deleteTask()">Delete Task</button></footer>
+    </section>
+  </div>
+}
