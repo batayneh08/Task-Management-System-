@@ -1,10 +1,11 @@
 using System.Security.Claims;
 using System.Text;
-using ManagementSystem.Application;
 using ManagementSystem.Application.Interfaces;
+using ManagementSystem.Application.Services;
 using Management_System.Errors;
-using ManagementSystem.Infrastructure;
+using ManagementSystem.Infrastructure.Authentication;
 using ManagementSystem.Infrastructure.Data;
+using ManagementSystem.Infrastructure.Repositories;
 using Management_System.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +18,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 builder.Services.AddExceptionHandler<ApiExceptionHandler>();
 builder.Services.AddProblemDetails();
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Database connection string 'DefaultConnection' is missing.");
+}
+
+builder.Services.AddDbContext<TaskManagementDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+builder.Services.AddScoped<DatabaseSeeder>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<ITaskRepository, TaskRepository>();
+builder.Services.AddScoped<IActivityLogRepository, ActivityLogRepository>();
+builder.Services.AddScoped<IPasswordHasher, IdentityPasswordHasher>();
 builder.Services.AddScoped<ITokenGenerator, JwtTokenGenerator>();
 
 var jwtKey = builder.Configuration["Jwt:Key"];
